@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestion de Tâches</title>
+</head>
+<body>
+  <h1>Mes Tâches</h1>
+  <div id="liste"></div>
+
+  <h2>Ajouter une tâche</h2>
+  <form id="formulaire">
+    <input type="text" id="titre" placeholder="Titre" required>
+    <input type="text" id="description" placeholder="Description" required>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <script>
+    // Ajouter des boutons Modifier et Supprimer pour chaque tâche
+    function chargerTaches() {
+      fetch('/taches')
+        .then(response => response.json())
+        .then(data => {
+          const liste = document.getElementById('liste');
+          liste.innerHTML = '';
+          data.forEach(t => {
+            const div = document.createElement('div');
+            div.textContent = `${t.id}. ${t.titre} — ${t.description}`;
+
+            // Bouton Modifier
+            const btnModifier = document.createElement('button');
+            btnModifier.textContent = 'Modifier';
+            btnModifier.addEventListener('click', () => {
+              const nouveauTitre = prompt('Nouveau titre:', t.titre);
+              const nouvelleDescription = prompt('Nouvelle description:', t.description);
+              if (nouveauTitre && nouvelleDescription) {
+                fetch(`/taches/${t.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ titre: nouveauTitre, description: nouvelleDescription })
+                }).then(() => chargerTaches());
+              }
+            });
+
+            // Bouton Supprimer
+            const btnSupprimer = document.createElement('button');
+            btnSupprimer.textContent = 'Supprimer';
+            btnSupprimer.addEventListener('click', () => {
+              if (confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+                fetch(`/taches/${t.id}`, {
+                  method: 'DELETE'
+                }).then(() => chargerTaches());
+              }
+            });
+
+            div.appendChild(btnModifier);
+            div.appendChild(btnSupprimer);
+            liste.appendChild(div);
+          });
+        });
+    }
+
+    // Ajouter une tâche
+    document.getElementById('formulaire').addEventListener('submit', e => {
+      e.preventDefault();
+      const titre = document.getElementById('titre').value;
+      const description = document.getElementById('description').value;
+
+      fetch('/taches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titre, description })
+      }).then(() => {
+        chargerTaches();
+        document.getElementById('formulaire').reset();
+      });
+    });
+
+    chargerTaches();
+  </script>
+</body>
+</html>
